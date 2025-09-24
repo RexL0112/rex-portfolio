@@ -1,56 +1,40 @@
-$yaml = @'
-name: Build and Deploy Hugo site to GitHub Pages
+name: Deploy Hugo site to Pages
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main  # Set this to the branch you want to deploy from
 
 permissions:
   contents: read
   pages: write
   id-token: write
 
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
 jobs:
-  build:
+  build-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install TailwindCSS (runner-local)
-        run: |
-          npm init -y
-          npm install -D tailwindcss postcss autoprefixer
-          npx tailwindcss -v
-
       - name: Setup Hugo
-        uses: peaceiris/actions-hugo@v2
+        uses: peaceiris/actions-hugo@v3
         with:
-          hugo-version: '0.150.0'
+          hugo-version: 'latest'
           extended: true
 
-      - name: Build site
+      - name: Build
         run: hugo --minify
 
-      - name: Upload artifact for GitHub Pages
-        uses: actions/upload-pages-artifact@v1
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
           path: ./public
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
       - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v1
-'@
+        uses: actions/deploy-pages@v4
 
-# Ensure folder exists and write the file (UTF8, no extra BOM handling here)
-New-Item -ItemType Directory -Force -Path .github\workflows | Out-Null
-$yaml | Out-File -FilePath .github\workflows\deploy.yml -Encoding utf8
-Write-Host "WROTE: .github\workflows\deploy.yml"
