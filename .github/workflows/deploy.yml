@@ -1,12 +1,19 @@
-name: Hugo Build & Deploy
+$wf = @'
+name: Build and Deploy Hugo site to GitHub Pages
 
 on:
   push:
     branches:
       - main
 
+# Permissions required so the workflow can deploy to Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
-  build-deploy:
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -16,24 +23,40 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: '20'
 
-      - name: Install TailwindCSS
+      - name: Install TailwindCSS (runner-local)
         run: |
-          npm install -D tailwindcss
+          npm init -y
+          npm install -D tailwindcss postcss autoprefixer
           npx tailwindcss -v
 
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v2
         with:
-          hugo-version: "0.150.0"
+          hugo-version: '0.150.0'
           extended: true
 
       - name: Build site
         run: hugo --minify
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+      - name: Upload artifact for GitHub Pages
+        uses: actions/upload-pages-artifact@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./public
+          path: ./public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v1
+'@
+
+# Ensure the workflows folder exists, then write the file
+New-Item -ItemType Directory -Force -Path .github\workflows | Out-Null
+$wf | Out-File -FilePath .github\workflows\deploy.yml -Encoding utf8
+Write-Host "Wrote .github\workflows\deploy.yml"
