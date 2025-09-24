@@ -1,12 +1,10 @@
-$wf = @'
+$yaml = @'
 name: Build and Deploy Hugo site to GitHub Pages
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
-# Permissions required so the workflow can deploy to Pages
 permissions:
   contents: read
   pages: write
@@ -15,7 +13,6 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -48,15 +45,12 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
     steps:
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v1
 '@
 
-# Ensure the workflows folder exists, then write the file
+# Ensure folder exists and write the file (UTF8, no extra BOM handling here)
 New-Item -ItemType Directory -Force -Path .github\workflows | Out-Null
-$wf | Out-File -FilePath .github\workflows\deploy.yml -Encoding utf8
-Write-Host "Wrote .github\workflows\deploy.yml"
+$yaml | Out-File -FilePath .github\workflows\deploy.yml -Encoding utf8
+Write-Host "WROTE: .github\workflows\deploy.yml"
